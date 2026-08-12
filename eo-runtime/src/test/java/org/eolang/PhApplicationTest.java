@@ -133,6 +133,23 @@ final class PhApplicationTest {
     }
 
     @Test
+    void escapesControlCharactersAsUnicode() {
+        MatcherAssert.assertThat(
+            "String φ-term must spell control characters as unicode escapes",
+            new PhApplication(
+                new PhDispatch(Phi.Φ, "string"), 0,
+                new PhApplication(
+                    new PhDispatch(Phi.Φ, "bytes"), 0,
+                    new PhDefault(
+                        new byte[] {'a', 0x1B, 0x0B, 0x00, 0x7F}
+                    )
+                )
+            ).φTerm(),
+            Matchers.equalTo("\"a\\u001b\\u000b\\u0000\\u007f\"")
+        );
+    }
+
+    @Test
     void rendersInvalidUtfAsBytes() {
         MatcherAssert.assertThat(
             "Invalid UTF-8 must not be rendered as a misleading string literal",

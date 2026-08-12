@@ -5,11 +5,10 @@
 package org.eolang;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.function.Supplier;
 
 /**
- * UTF-8 bytes rendered as an EO string literal.
+ * A text rendered as an EO string literal.
  *
  * <p>The text lands between double quotes, with every glyph spelled by
  * {@link Escaped}. Without the escaping, a quote inside the text closes
@@ -21,22 +20,30 @@ import java.util.function.Supplier;
 final class Quoted implements Supplier<String> {
 
     /**
-     * The bytes of the text.
+     * The text.
      */
-    private final byte[] data;
+    private final String text;
 
     /**
      * Ctor.
-     * @param data The bytes
+     * @param data The UTF-8 bytes of the text
      */
     Quoted(final byte[] data) {
-        this.data = Arrays.copyOf(data, data.length);
+        this(new String(data, StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Ctor.
+     * @param txt The text
+     */
+    Quoted(final String txt) {
+        this.text = txt;
     }
 
     @Override
     public String get() {
         final StringBuilder out = new StringBuilder("\"");
-        for (final char glyph : new String(this.data, StandardCharsets.UTF_8).toCharArray()) {
+        for (final char glyph : this.text.toCharArray()) {
             out.append(new Escaped(glyph).get());
         }
         return out.append('"').toString();

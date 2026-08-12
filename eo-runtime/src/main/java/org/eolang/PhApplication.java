@@ -103,6 +103,11 @@ public final class PhApplication extends PhOnce {
 
     /**
      * Render UTF-8 bytes as an EO string literal.
+     *
+     * <p>The decoded text goes through {@link Quoted}, the same escaper
+     * {@link PhDefault#φTerm()} prints a string with, so one text reads the
+     * same way whichever of the two renderers reaches it.</p>
+     *
      * @param bytes Bytes to render
      * @return Escaped literal, or null if bytes are not valid UTF-8
      */
@@ -120,17 +125,7 @@ public final class PhApplication extends PhOnce {
         }
         final String result;
         if (text.isPresent()) {
-            result = String.format(
-                "\"%s\"",
-                text.get()
-                    .replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("\b", "\\b")
-                    .replace("\f", "\\f")
-                    .replace(String.valueOf('\n'), "\\n")
-                    .replace(String.valueOf('\r'), "\\r")
-                    .replace("\t", "\\t")
-            );
+            result = new Quoted(text.get()).get();
         } else {
             result = null;
         }
