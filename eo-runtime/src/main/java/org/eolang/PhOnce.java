@@ -11,6 +11,14 @@ import java.util.function.Supplier;
 
 /**
  * An object wrapping another one.
+ *
+ * <p>The wrapper survives both {@link PhOnce#copy()} and
+ * {@link PhOnce#normalized()}, so that whatever is built on the result keeps
+ * fetching its object once. A bottom is the single exception: the contract of
+ * {@link Phi#normalized()} is that a terminated computation surfaces there as
+ * a {@link PhTerminator} detectable by identity, and a wrapped bottom would
+ * hide from that check.</p>
+ *
  * @since 0.1
  * @checkstyle DesignForExtensionCheck (200 lines)
  */
@@ -123,7 +131,14 @@ public class PhOnce implements Phi {
 
     @Override
     public Phi normalized() {
-        return this.object.get().normalized();
+        final Phi form = this.object.get().normalized();
+        final Phi result;
+        if (form instanceof PhTerminator) {
+            result = form;
+        } else {
+            result = new PhOnce(() -> form, this.term);
+        }
+        return result;
     }
 
     @Override

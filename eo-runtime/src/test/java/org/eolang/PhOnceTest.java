@@ -36,4 +36,46 @@ final class PhOnceTest {
             Matchers.equalTo("x.foo")
         );
     }
+
+    @Test
+    void keepsWrapperAfterNormalization() {
+        MatcherAssert.assertThat(
+            "normalized() must stay wrapped in PhOnce, so the object is fetched once, but it didnt",
+            new PhOnce(() -> new PhDefault(new byte[] {(byte) 0x01})).normalized(),
+            Matchers.instanceOf(PhOnce.class)
+        );
+    }
+
+    @Test
+    void keepsTermAfterNormalization() {
+        MatcherAssert.assertThat(
+            "normalized() must carry the φ-term of the wrapper over, but it didnt",
+            new PhOnce(
+                () -> new PhDefault(new byte[] {(byte) 0x01}),
+                () -> "x.foo"
+            ).normalized().φTerm(),
+            Matchers.equalTo("x.foo")
+        );
+    }
+
+    @Test
+    void revealsBottomWithoutWrappingIt() {
+        MatcherAssert.assertThat(
+            "a wrapped bottom must surface as a PhTerminator, not as a PhOnce, but it didnt",
+            new PhOnce(() -> new PhDispatch(new PhDefault(), "missing")).normalized(),
+            Matchers.instanceOf(PhTerminator.class)
+        );
+    }
+
+    @Test
+    void staysRecoverableWhenWrappingABottom() {
+        final Phi recovered = new EOrecovered();
+        recovered.put("value", new PhOnce(() -> new PhDispatch(new PhDefault(), "missing")));
+        recovered.put("alternative", new Data.ToPhi(42L));
+        MatcherAssert.assertThat(
+            "a bottom behind PhOnce must still be intercepted by recovered, but it wasnt",
+            new Dataized(recovered).asNumber(),
+            Matchers.equalTo(42.0)
+        );
+    }
 }
