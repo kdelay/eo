@@ -11,12 +11,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.eolang.lowering.Folded;
 import org.eolang.lowering.Formas;
 import org.eolang.lowering.Lowered;
 import org.eolang.lowering.Outlined;
 import org.eolang.lowering.Phino;
-import org.eolang.lowering.Rewrite;
 
 /**
  * Run the lowering passes of {@code eo-lowering} over every XMIR this
@@ -91,24 +92,25 @@ final class Lowering implements Step {
     public void exec() throws IOException {
         final Formas formas = new Formas(this.tables);
         final Path atoms = this.home.resolve(Lowering.ATOMS);
-        final Iterable<Rewrite> passes = Arrays.asList(
-            new Lowered(this.phino, formas, atoms),
-            new Outlined(this.phino, formas, atoms),
-            new Folded(this.phino)
+        final List<Tallied> passes = Arrays.asList(
+            new Tallied("lowered", new Lowered(this.phino, formas, atoms)),
+            new Tallied("outlined", new Outlined(this.phino, formas, atoms)),
+            new Tallied("folded", new Folded(this.phino))
         );
         Logger.info(
-            this, "Folded or lowered %d fragment(s) in %d XMIR(s), into %[file]s",
+            this, "Folded or lowered %d fragment(s) in %d XMIR(s), into %[file]s: %s",
             new Threaded<>(this.sources, tojo -> this.folded(tojo, passes)).total(),
-            this.sources.size(), this.home
+            this.sources.size(), this.home,
+            passes.stream().map(String::valueOf).collect(Collectors.joining(", "))
         );
     }
 
-    private int folded(final TjForeign tojo, final Iterable<Rewrite> passes)
+    private int folded(final TjForeign tojo, final Iterable<Tallied> passes)
         throws IOException {
         final XMLDocument doc = new XMLDocument(tojo.xmir());
         final Xnav object = new Xnav(doc.inner());
         int count = 0;
-        for (final Rewrite pass : passes) {
+        for (final Tallied pass : passes) {
             count += pass.rewrite(object);
         }
         if (count > 0) {
