@@ -251,7 +251,9 @@ final class Tokens {
 
     /**
      * Read an INT literal at the cursor — optional sign then digits,
-     * per R-9.8.1 (no leading zeros). Advances past it.
+     * per R-9.8.1 (no leading zeros). Advances past it. When the digits
+     * are the integer part of a FLOAT, which R-9.8.2 does not restrict,
+     * leading zeros are allowed.
      *
      * @return INT value
      */
@@ -279,14 +281,13 @@ final class Tokens {
                 "invalid signed-number literal"
             );
         }
-        final String digits = this.body.substring(from, idx);
-        if (digits.length() >= 2 && digits.charAt(0) == '0') {
+        this.cursor = idx;
+        if (Tokens.leadingZero(this.body.substring(from, idx)) && !this.dottedDigit()) {
             throw new ParseError(
                 this.span.line(), this.span.indent() + start,
                 "integer literal must not have leading zeros"
             );
         }
-        this.cursor = idx;
         return new Value(
             Value.Kind.INTEGER, this.body.substring(start, idx), this.span.indent() + start
         );
@@ -650,6 +651,10 @@ final class Tokens {
 
     private static int clamped(final int pos, final Span source) {
         return Math.min(pos, source.text().length() - 1);
+    }
+
+    private static boolean leadingZero(final String digits) {
+        return digits.length() >= 2 && digits.charAt(0) == '0';
     }
 
     private static boolean singleToken(final String inside) {

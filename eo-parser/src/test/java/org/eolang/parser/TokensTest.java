@@ -250,6 +250,24 @@ final class TokensTest {
     }
 
     @Test
+    void readsFloatWithLeadingZerosInIntegerPart() {
+        MatcherAssert.assertThat(
+            "a FLOAT may have leading zeros in its integer part per R-9.8.2",
+            new Tokens("-007.25", new Span("-007.25", 1)).readNumber().raw(),
+            Matchers.equalTo("-007.25")
+        );
+    }
+
+    @Test
+    void rejectsLeadingZeroIntegerBeforeChain() {
+        Assertions.assertThrows(
+            ParseError.class,
+            () -> new Tokens("00.as-bytes", new Span("00.as-bytes", 1)).readNumber(),
+            "an INT followed by a chain must still reject leading zeros per R-9.8.1"
+        );
+    }
+
+    @Test
     void leavesIntegerWhenDotFollowedByName() {
         MatcherAssert.assertThat(
             "`42.as-bytes` must read as INT followed by a chain, not as a FLOAT",
