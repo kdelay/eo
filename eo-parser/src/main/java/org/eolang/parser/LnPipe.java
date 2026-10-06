@@ -65,6 +65,10 @@ final class LnPipe implements Line {
         Blanks.checkPlain(this.span, globals, emit);
         this.precheck(stack);
         final Tokens tokens = this.piped();
+        if (Eo.topLevelPlusPlusArrowIndex(this.span.body()) >= 0
+            || Eo.topLevelMinusMinusArrowIndex(this.span.body()) >= 0) {
+            throw this.tested();
+        }
         final List<Value> args = tokens.readArgs();
         Bindings.checkAllOrNothing(args, this.span);
         final Suffix suffix = new Suffix(
@@ -72,10 +76,7 @@ final class LnPipe implements Line {
         );
         suffix.rejectAtomOutsideFormation(this.span);
         if (suffix.test()) {
-            throw new ParseError(
-                this.span.line(), this.span.indent(),
-                "a pipe application cannot declare a test attribute"
-            );
+            throw this.tested();
         }
         globals.seal(emit, this.span);
         final Openness openness;
@@ -115,6 +116,13 @@ final class LnPipe implements Line {
                 "a pipe must follow a named formation or another pipe"
             );
         }
+    }
+
+    private ParseError tested() {
+        return new ParseError(
+            this.span.line(), this.span.indent(),
+            "a pipe application cannot declare a test attribute"
+        );
     }
 
     private Tokens piped() {
